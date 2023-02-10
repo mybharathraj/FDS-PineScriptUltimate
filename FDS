@@ -1,0 +1,204 @@
+```
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+// © Seatrips
+
+//@version=5
+
+indicator("DS S&R EMA SMA ROC PC SI EXTRA Feb-2023", shorttitle="FDS", overlay=true)
+
+lengthInput = input.int(150, "Length", minval = 2)
+
+// Determine variables 
+
+hi = ta.sma(high, lengthInput)
+lo = ta.sma(low, lengthInput)
+cl = ta.sma(close, lengthInput) 
+op = ta.sma(open, lengthInput) 
+
+// Roc add
+
+roc = ((close - close[13]) / close[13]) * 100
+
+// Lowest vs highest
+
+lowest = ta.lowest(lo, lengthInput)
+highest = ta.highest(hi, lengthInput)
+
+// bools for ribbon 
+
+bool closeabove = close >= cl 
+bool closebelow = close <= cl 
+bool highabove = high >= hi 
+bool lowabove = low >= lo 
+bool openabove = open >= op 
+
+// bools for highest/lowest 
+
+bool paabovehigh = close > highest 
+bool pabelowlow = close < lowest 
+bool middle = close >= lo and close <= hi
+
+// Colours 
+
+color bull = color.rgb(10, 241, 10)
+color bear = color.rgb(251, 156, 3)
+color neutral = color.rgb(251, 156, 3)
+color standard = color.rgb(10, 241, 10)
+color fillcolorbull = color.new(color.green, 88)
+color fillcolorbear = color.new(color.red, 88)
+color fillcolorneutral = color.new(color.gray, 88)
+
+// Determine Colour 
+
+color hicolor = highabove ? bull : bear 
+color locolor = lowabove ? bull : bear 
+color opcolor = openabove ? bull : bear 
+color clcolor = closeabove ? bull : bear 
+color lowestcolor = pabelowlow ? neutral : standard
+color highestcolor = paabovehigh ? standard : neutral
+color fillfinal = closeabove ? fillcolorbull : closebelow ? fillcolorbear : middle ? fillcolorneutral : na 
+
+// Band Plots 
+
+plot(lowest, "RorS", color = lowestcolor, linewidth=2) // YOU CAN ADD THIS LINE IF YOU LIKE
+plot(highest, "RorS", color = highestcolor, linewidth=2) // YOU CAN ADD THIS LINE IF YOU LIKE
+
+// Confirmation
+confirmOpenL = close >= open
+confirmOpenS = close <= open
+
+//signal once
+
+var isLong = false
+var isShort = false
+
+//Long
+
+long = not isLong and (close > hi) and (roc > 0 and close[1] < close ? 1 : 0)
+
+//Short
+
+short = not isShort and (close < lo) and (roc < 0 and close[1] > close ? 1 : 0)
+
+if (long)
+    isLong := true
+    isShort := false
+
+if (short)
+    isLong := false
+    isShort := true
+
+// Compare the current values of each SMA to its previous value and create a signal that shows whether the slope of each SMA is going up or going down
+
+ema10 = ta.ema(close, 10)
+sma20 = ta.sma(close, 20)
+ema34 = ta.ema(close, 34)
+sma50 = ta.sma(close, 50)
+sma200 = ta.sma(close, 200)
+
+// Create variables to store the previous values of each SMA
+
+prev_ema10 = ema10[1]
+prev_sma20 = sma20[1]
+prev_ema34 = ema34[1]
+prev_sma50 = sma50[1]
+prev_sma200 = sma200[1]
+
+// Determine Colour 
+
+yeslong = closeabove and not long
+yesshort = closebelow and not short
+
+color candlecolor = yeslong and not (close > highest) ? bull : yesshort and not (close < lowest) ? bear : middle ? neutral : long and not (close > highest) ? standard : short and not (close < lowest) ? neutral : close > highest ? color.green : close < lowest ? color.red : color.blue
+
+// Set candle colors
+
+barcolor(candlecolor)
+
+//plot signals on chart after confirmation
+
+plotshape(long and confirmOpenL, color=color.rgb(10, 241, 10), style=shape.arrowup, textcolor=color.rgb(10, 241, 10), title="Buy Signal", text="LONG", location=location.belowbar)
+plotshape(short and confirmOpenS, color=color.rgb(231, 8, 8), style=shape.arrowdown, textcolor=color.rgb(231, 8, 8), title="Sell Signal", text="SHORT", location=location.abovebar)
+
+//create alerts for buy and sell signals
+
+alertcondition(long and confirmOpenL, title="Buy Signal Alert", message="A buy signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
+alertcondition(short and confirmOpenS, title="Sell Signal Alert", message="A sell signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
+
+// Plot signal AND ALERT when close is above highest and low is below lowest
+
+//signal once
+
+var isHighest = false
+var isLowest = false
+
+//Long
+
+AboveH = not isHighest and close > highest
+
+//Short
+
+BelowL = not isLowest and close < lowest
+
+if (AboveH)
+    isHighest := true
+    isLowest := false
+
+if (BelowL)
+    isHighest := false
+    isLowest := true
+
+plotshape(AboveH and confirmOpenL, color=color.green, style=shape.arrowup, size=size.large, textcolor=color.green, title="BULLISH", text="BULLISH", location=location.belowbar)
+plotshape(BelowL and confirmOpenS, color=color.rgb(251, 156, 3), style=shape.arrowdown, size=size.large, textcolor=color.rgb(251, 156, 3), title="BEARISH", text="BEARISH", location=location.abovebar)
+
+alertcondition(AboveH and confirmOpenL, title="BULLISH", message="Price is Above the High Main Main Signal Line")
+alertcondition(BelowL and confirmOpenS, title="BEARISH", message="Price is Below the Low Main Signal Line")
+
+// Calculate support and resistance levels
+
+resistance = ta.highest(high, lengthInput)
+support = ta.lowest(low, lengthInput)
+
+//len Support Resistance
+
+lenresistance = input.int(90, minval=60,title='RESISTANCE length')
+lensupport = input.int(90, minval=60, title='SUPPORT length')
+
+// Plot support and resistance lines
+
+plot(resistance, color=color.new(#78b6f4, 0), title='resistance', linewidth=1)
+plot(support, color=color.new(#7777eb, 0), title='support', linewidth=1)
+
+// Sentiment signals
+
+length = input.int(defval=50, title='Look-back Window', minval=1)
+
+// Define extreme sentiment level above which reveral is expected 
+extreme_sentiment = input.float( defval=61.5, title="Extreme Sentiment Level")
+
+// initialize red and green candles counters
+count_green = 0
+count_red = 0
+
+// Count green and red candles
+for i = 0 to length - 1 by 1
+    if open[i] < close[i]
+        count_green := count_green + 1
+        count_green
+    if open[i] > close[i]
+        count_red := count_red + 1
+        count_red
+
+// Calcule percentages of green and rend candles within the lookback window
+green_perc = count_green / length * 100
+red_perc = count_red / length * 100
+
+// Define extreme sentiment conditions
+extreme_bullish = ta.crossover(green_perc, 61.8)
+extreme_bearish = ta.crossover(red_perc, 61.8)
+
+//Plot labels with signal messages
+plotshape(extreme_bullish and ta.barssince(extreme_bullish[1]) > 20 ? green_perc : na, style=shape.arrowdown, text='RE', location=location.abovebar, size=size.large, textcolor=color.new(#05b5f0, 0))
+plotshape(extreme_bearish and ta.barssince(extreme_bearish[1]) > 20 ? red_perc : na, style=shape.arrowup, text='RE', location=location.belowbar, size=size.large, textcolor=color.new(#05b5f0, 0))
+```
