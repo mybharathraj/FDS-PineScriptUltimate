@@ -44,7 +44,7 @@ color bull = color.rgb(10, 241, 10)
 color bear = color.rgb(244, 134, 143)
 color neutral = color.rgb(244, 134, 143)
 color deepbear = color.red
-color deepbull = color.green
+color deepbull = color.rgb(52, 120, 54)
 color standard = color.rgb(10, 241, 10)
 color fillcolorbull = color.new(color.green, 88)
 color fillcolorbear = color.new(color.red, 88)
@@ -62,8 +62,8 @@ color fillfinal = closeabove ? fillcolorbull : closebelow ? fillcolorbear : midd
 
 // Band Plots 
 
-plot(lowest, "RorS", color = lowestcolor, linewidth=2) // YOU CAN ADD THIS LINE IF YOU LIKE
-plot(highest, "RorS", color = highestcolor, linewidth=2) // YOU CAN ADD THIS LINE IF YOU LIKE
+plot(lowest, "RorS", color = lowestcolor, linewidth=3)
+plot(highest, "RorS", color = highestcolor, linewidth=3)
 
 // Confirmation
 confirmOpenL = close >= open
@@ -106,12 +106,13 @@ prev_ema34 = ema34[1]
 prev_sma50 = sma50[1]
 prev_sma200 = sma200[1]
 
+
 // Determine Colour 
 
 yeslong = closeabove and not long
 yesshort = closebelow and not short
 
-color candlecolor = yeslong and not (close > highest) ? bull : yesshort and not (close < lowest) ? bear : middle ? neutral : long and not (close > highest) ? standard : short and not (close < lowest) ? neutral : close > highest ? color.green : close < lowest ? color.red : color.blue
+color candlecolor = yeslong and not (close > highest) ? bull : yesshort and not (close < lowest) ? bear : middle ? neutral : long and not (close > highest) ? standard : short and not (close < lowest) ? neutral : close > highest ? deepbull : close < lowest ? deepbear : color.blue
 
 // Set candle colors
 
@@ -150,8 +151,8 @@ if (BelowL)
     isHighest := false
     isLowest := true
 
-plotshape(AboveH and confirmOpenL, color=color.green, style=shape.arrowup, size=size.large, textcolor=color.green, title="BULLISH", text="BULLISH", location=location.belowbar)
-plotshape(BelowL and confirmOpenS, color=color.rgb(251, 156, 3), style=shape.arrowdown, size=size.large, textcolor=color.rgb(251, 156, 3), title="BEARISH", text="BEARISH", location=location.abovebar)
+plotshape(AboveH and confirmOpenL, color=color.rgb(5, 243, 243), style=shape.arrowup, size=size.large, textcolor=color.rgb(5, 243, 243), title="BULLISH", text="BULLISH", location=location.belowbar)
+plotshape(BelowL and confirmOpenS, color=color.rgb(212, 3, 249), style=shape.arrowdown, size=size.large, textcolor=color.rgb(215, 4, 252), title="BEARISH", text="BEARISH", location=location.abovebar)
 
 alertcondition(AboveH and confirmOpenL, title="BULLISH", message="Price is Above the High Main Main Signal Line")
 alertcondition(BelowL and confirmOpenS, title="BEARISH", message="Price is Below the Low Main Signal Line")
@@ -202,5 +203,34 @@ extreme_bearish = ta.crossover(red_perc, 61.8)
 //Plot labels with signal messages
 plotshape(extreme_bullish and ta.barssince(extreme_bullish[1]) > 20 ? green_perc : na, style=shape.arrowdown, text='RE', location=location.abovebar, size=size.large, textcolor=color.new(#05b5f0, 0))
 plotshape(extreme_bearish and ta.barssince(extreme_bearish[1]) > 20 ? red_perc : na, style=shape.arrowup, text='RE', location=location.belowbar, size=size.large, textcolor=color.new(#05b5f0, 0))
+
+
+// Pot MA's
+
+src = input(close, title='Source')
+
+len8 = input.int(10, title='EMA 8 Length')
+len10 = input.int(10, title='EMA 10 Length')
+len12 = input.int(12, title='EMA 12 Length')
+len20 = input.int(20, title='SMA 20 Length')
+
+ema10plot = input (true, title="Show EMA10 on chart")
+sma20plot = input (true, title="Show SMA20 on chart")
+
+out8 = ta.ema(src, len8)
+out10 = ta.ema(src, len10)
+out12 = ta.sma(src, len12)
+out20 = ta.sma(src, len20)
+
+up20 = out20 > out12[1]
+down20 = out20 < out12[1]
+mycolor20 = down20 ? color.rgb(250, 2, 213) : up20 ? color.rgb(242, 158, 230) : na
+plot(out20 and sma20plot ? out20 :na, title="SMA20", color=mycolor20, linewidth = 1)
+
+//EMA 10
+up10 = out10 > out8[1]
+down10 = out10 < out8[1]
+mycolor10 = up10 ? color.rgb(82, 171, 244) : down10 ? color.rgb(188, 222, 251) : na
+plot(out10 and ema10plot ? out10 :na, title="EMA10", color=mycolor10, linewidth = 1)
 
 
