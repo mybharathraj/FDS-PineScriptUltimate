@@ -15,10 +15,6 @@ lo = ta.sma(low, lengthInput)
 cl = ta.sma(close, lengthInput) 
 op = ta.sma(open, lengthInput) 
 
-// Roc add
-
-roc = ((close - close[13]) / close[13]) * 100
-
 // Lowest vs highest
 
 lowest = ta.lowest(lo, lengthInput)
@@ -46,9 +42,6 @@ color neutral = color.rgb(244, 134, 143)
 color deepbear = color.rgb(185, 7, 7)
 color deepbull = color.rgb(10, 241, 10)
 color standard = color.rgb(52, 120, 54)
-color fillcolorbull = color.new(color.green, 88)
-color fillcolorbear = color.new(color.red, 88)
-color fillcolorneutral = color.new(color.gray, 88)
 
 // Determine Colour 
 
@@ -58,7 +51,6 @@ color opcolor = openabove ? bull : bear
 color clcolor = closeabove ? bull : bear 
 color lowestcolor = pabelowlow ? deepbear : standard
 color highestcolor = paabovehigh ? deepbull : neutral
-color fillfinal = closeabove ? fillcolorbull : closebelow ? fillcolorbear : middle ? fillcolorneutral : na 
 
 // Confirmation Candle close
 
@@ -72,11 +64,11 @@ var isShort = false
 
 // Long
 
-long = not isLong and (close > hi) and (roc > 0 and close[1] < close ? 1 : 0)
+long = not isLong and (close > hi)
 
 // Short
 
-short = not isShort and (close < lo) and (roc < 0 and close[1] > close ? 1 : 0)
+short = not isShort and (close < lo)
 
 if (long)
     isLong := true
@@ -102,6 +94,12 @@ up10 = out10 > out10[1]
 down10 = out10 < out10[1]
 mycolor10 = up10 ? color.rgb(82, 171, 244) : down10 ? color.rgb(188, 222, 251) : na
 
+sma20plot = input (true, title="Show sma20 on chart")
+out20 = ta.ema(src, len20)
+up20 = out20 > out20[1]
+down20 = out20 < out20[1]
+mycolor20 = up20 ? color.rgb(246, 3, 209) : down20 ? color.rgb(249, 190, 243) : na
+
 // Define the fast and slow moving average periods
 
 fast_period = input(title="Fast Line Period", defval=10)
@@ -117,7 +115,7 @@ slow_line = ta.sma(close, slow_period)
 yeslong = closeabove and not long
 yesshort = closebelow and not short
 
-color candlecolor = yeslong and not (close > highest) ? bull : yesshort and not (close < lowest) ? bear : middle ? neutral : long and not (close > highest) ? standard : short and not (close < lowest) ? neutral : close > highest and (close > slow_line) ? deepbull : close < lowest and (close < slow_line) ? deepbear : color.blue
+color candlecolor = yeslong and not (close > highest) ? bull : yesshort and not (close < lowest) ? bear : middle ? neutral : long and not (close > highest) ? standard : short and not (close < lowest) ? neutral : close > highest and (close > slow_line) ? deepbull : close < lowest and (close < slow_line) ? deepbear : color.white
 
 // Set candle colors
 
@@ -135,7 +133,7 @@ lensupport = input.int(90, minval=60, title='SUPPORT length')
 
 // Sentiment signals
 
-length = input.int(defval=50, title='Look-back Window', minval=1)
+length = input.int(defval=90, title='Look-back Window', minval=1)
 
 // initialize red and green candles counters
 
@@ -164,11 +162,11 @@ var isLowest = false
 
 // Above
 
-AboveH = not isHighest and close > highest and green_perc > 51.1 and close > ema10 and ema10 > sma20
+AboveH = not isHighest and close > highest and green_perc > 41.1 and close > ema10 and ema10 > sma20
 
 // Below
 
-BelowL = not isLowest and close < lowest and red_perc > 51.1 and close < ema10 and ema10 < sma20
+BelowL = not isLowest and close < lowest and red_perc > 41.1 and close < ema10 and ema10 < sma20
 
 if (AboveH)
     isHighest := true
@@ -183,9 +181,10 @@ if (BelowL)
 color fast_linecolor = fast_line > slow_line ? color.rgb(5, 251, 13) : fast_line < slow_line ? color.rgb(250, 4, 4) : na
 color slow_linecolor = fast_line > slow_line ? color.rgb(37, 159, 41) : fast_line < slow_line ? color.rgb(173, 50, 50) : na
 
-// Plot EMA10
+// MA Plots
 
 plot(out10 and ema10plot ? out10 :na, title="EMA10", color=mycolor10, linewidth = 2)
+plot(out20 and sma20plot ? out20 :na, title="SMA20", color=mycolor20, linewidth = 2)
 
 // Band Plots 
 
@@ -199,16 +198,17 @@ plot(support, color=color.new(#575786, 0), title='support', linewidth=1)
 
 // Plot Signal and Make Alertcondition
 
-plotshape(AboveH and confirmOpenL, color=color.rgb(5, 243, 243), style=shape.arrowup, size=size.large, textcolor=color.rgb(5, 243, 243), title="BULLISH", text="BULLISH", location=location.belowbar)
-plotshape(BelowL and confirmOpenS, color=color.rgb(212, 3, 249), style=shape.arrowdown, size=size.large, textcolor=color.rgb(215, 4, 252), title="BEARISH", text="BEARISH", location=location.abovebar)
+plotshape(AboveH and confirmOpenL, color=color.rgb(10, 241, 10), style=shape.arrowup, size=size.large, textcolor=color.rgb(10, 241, 10), title="BULLISH", text="BULLISH", location=location.belowbar)
+plotshape(BelowL and confirmOpenS, color=color.rgb(173, 50, 50), style=shape.arrowdown, size=size.large, textcolor=color.rgb(173, 50, 50), title="BEARISH", text="BEARISH", location=location.abovebar)
 
-alertcondition(AboveH and confirmOpenL, title="BULLISH", message="Price is Above the High Main Main Signal Line")
+alertcondition(AboveH and confirmOpenL, title="BULLISH", message="Price is Above the High Main Signal Line")
 alertcondition(BelowL and confirmOpenS, title="BEARISH", message="Price is Below the Low Main Signal Line")
 
 // Plot Signal and Make Alertcondition
 
-plotshape(long and confirmOpenL, color=color.rgb(10, 241, 10), style=shape.arrowup, size=size.large, textcolor=color.rgb(10, 241, 10), title="Buy Signal", text="LONG", location=location.belowbar)
-plotshape(short and confirmOpenS, color=color.rgb(231, 8, 8), style=shape.arrowdown, size=size.large, textcolor=color.rgb(231, 8, 8), title="Sell Signal", text="SHORT", location=location.abovebar)
+plotshape(long and confirmOpenL, color=color.rgb(52, 120, 54), style=shape.arrowup, textcolor=color.rgb(52, 120, 54), title="Buy Signal", text="LONG", location=location.belowbar)
+plotshape(short and confirmOpenS, color=color.rgb(244, 134, 143), style=shape.arrowdown, textcolor=color.rgb(244, 134, 143), title="Sell Signal", text="SHORT", location=location.abovebar)
 
 alertcondition(long and confirmOpenL, title="Buy Signal Alert", message="A buy signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
 alertcondition(short and confirmOpenS, title="Sell Signal Alert", message="A sell signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
+
