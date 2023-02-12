@@ -1,4 +1,5 @@
-#### // This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+#### 
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 
 // © Seatrips
 
@@ -243,4 +244,4 @@ plotshape(short and confirmOpenS, color=color.rgb(244, 134, 143), style=shape.ar
 alertcondition(long and confirmOpenL, title="Buy Signal Alert", message="A buy signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
 alertcondition(short and confirmOpenS, title="Sell Signal Alert", message="A sell signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
 
-
+####
