@@ -1,0 +1,214 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+// © Seatrips
+
+//@version=5
+
+indicator("Colored Candles, Long and Short, Bullish and Bearish, S&R Feb-2023", shorttitle="C", overlay=true)
+
+lengthInput = input.int(150, "Length", minval = 2)
+
+// Determine variables 
+
+hi = ta.sma(high, lengthInput)
+lo = ta.sma(low, lengthInput)
+cl = ta.sma(close, lengthInput) 
+op = ta.sma(open, lengthInput) 
+
+// Roc add
+
+roc = ((close - close[13]) / close[13]) * 100
+
+// Lowest vs highest
+
+lowest = ta.lowest(lo, lengthInput)
+highest = ta.highest(hi, lengthInput)
+
+// bools for ribbon 
+
+bool closeabove = close >= cl 
+bool closebelow = close <= cl 
+bool highabove = high >= hi 
+bool lowabove = low >= lo 
+bool openabove = open >= op 
+
+// bools for highest/lowest 
+
+bool paabovehigh = close > highest 
+bool pabelowlow = close < lowest 
+bool middle = close >= lo and close <= hi
+
+// Colours 
+
+color bull = color.rgb(52, 120, 54)
+color bear = color.rgb(244, 134, 143)
+color neutral = color.rgb(244, 134, 143)
+color deepbear = color.rgb(185, 7, 7)
+color deepbull = color.rgb(10, 241, 10)
+color standard = color.rgb(52, 120, 54)
+color fillcolorbull = color.new(color.green, 88)
+color fillcolorbear = color.new(color.red, 88)
+color fillcolorneutral = color.new(color.gray, 88)
+
+// Determine Colour 
+
+color hicolor = highabove ? bull : bear 
+color locolor = lowabove ? bull : bear 
+color opcolor = openabove ? bull : bear 
+color clcolor = closeabove ? bull : bear 
+color lowestcolor = pabelowlow ? deepbear : standard
+color highestcolor = paabovehigh ? deepbull : neutral
+color fillfinal = closeabove ? fillcolorbull : closebelow ? fillcolorbear : middle ? fillcolorneutral : na 
+
+// Confirmation Candle close
+
+confirmOpenL = close >= open
+confirmOpenS = close <= open
+
+// Define Long and Short to signal once
+
+var isLong = false
+var isShort = false
+
+// Long
+
+long = not isLong and (close > hi) and (roc > 0 and close[1] < close ? 1 : 0)
+
+// Short
+
+short = not isShort and (close < lo) and (roc < 0 and close[1] > close ? 1 : 0)
+
+if (long)
+    isLong := true
+    isShort := false
+
+if (short)
+    isLong := false
+    isShort := true
+
+src = input(close, title='Source')
+
+len10 = input.int(10, title='EMA 10 Length')
+len20 = input.int(20, title='SMA 20 Length')
+
+// Compare the current values of each SMA to its previous value and create a signal that shows whether the slope of each SMA is going up or going down
+
+ema10 = ta.ema(close, 10)
+sma20 = ta.sma(close, 20)
+
+ema10plot = input (true, title="Show EMA10 on chart")
+out10 = ta.ema(src, len10)
+up10 = out10 > out10[1]
+down10 = out10 < out10[1]
+mycolor10 = up10 ? color.rgb(82, 171, 244) : down10 ? color.rgb(188, 222, 251) : na
+
+// Define the fast and slow moving average periods
+
+fast_period = input(title="Fast Line Period", defval=10)
+slow_period = input(title="Slow Line Period", defval=50)
+
+// Calculate the fast and slow lines
+
+fast_line = ta.sma(close, fast_period)
+slow_line = ta.sma(close, slow_period)
+
+// Determine Colour 
+
+yeslong = closeabove and not long
+yesshort = closebelow and not short
+
+color candlecolor = yeslong and not (close > highest) ? bull : yesshort and not (close < lowest) ? bear : middle ? neutral : long and not (close > highest) ? standard : short and not (close < lowest) ? neutral : close > highest and (close > slow_line) ? deepbull : close < lowest and (close < slow_line) ? deepbear : color.blue
+
+// Set candle colors
+
+barcolor(candlecolor)
+
+// Calculate support and resistance levels
+
+resistance = ta.highest(high, lengthInput)
+support = ta.lowest(low, lengthInput)
+
+// lenght Support Resistance
+
+lenresistance = input.int(90, minval=60,title='RESISTANCE length')
+lensupport = input.int(90, minval=60, title='SUPPORT length')
+
+// Sentiment signals
+
+length = input.int(defval=50, title='Look-back Window', minval=1)
+
+// initialize red and green candles counters
+
+count_green = 0
+count_red = 0
+
+// Count green and red candles
+
+for i = 0 to length - 1 by 1
+    if open[i] < close[i]
+        count_green := count_green + 1
+        count_green
+    if open[i] > close[i]
+        count_red := count_red + 1
+        count_red
+
+// Calcule percentages of green and red candles within the lookback window
+
+green_perc = count_green / length * 100
+red_perc = count_red / length * 100
+
+// Define AboveH and BelowL to signal once
+
+var isHighest = false
+var isLowest = false
+
+// Above
+
+AboveH = not isHighest and close > highest and green_perc > 51.1 and close > ema10 and ema10 > sma20
+
+// Below
+
+BelowL = not isLowest and close < lowest and red_perc > 51.1 and close < ema10 and ema10 < sma20
+
+if (AboveH)
+    isHighest := true
+    isLowest := false
+
+if (BelowL)
+    isHighest := false
+    isLowest := true
+
+// Fast_line and slow_line color
+
+color fast_linecolor = fast_line > slow_line ? color.rgb(5, 251, 13) : fast_line < slow_line ? color.rgb(250, 4, 4) : na
+color slow_linecolor = fast_line > slow_line ? color.rgb(37, 159, 41) : fast_line < slow_line ? color.rgb(173, 50, 50) : na
+
+// Plot EMA10
+
+plot(out10 and ema10plot ? out10 :na, title="EMA10", color=mycolor10, linewidth = 2)
+
+// Band Plots 
+
+plot(lowest, "RorS", color = lowestcolor, linewidth=3)
+plot(highest, "RorS", color = highestcolor, linewidth=3)
+
+// Plot support and resistance
+
+plot(resistance, color=color.new(#b2d3f3, 0), title='resistance', linewidth=1)
+plot(support, color=color.new(#575786, 0), title='support', linewidth=1)
+
+// Plot Signal and Make Alertcondition
+
+plotshape(AboveH and confirmOpenL, color=color.rgb(5, 243, 243), style=shape.arrowup, size=size.large, textcolor=color.rgb(5, 243, 243), title="BULLISH", text="BULLISH", location=location.belowbar)
+plotshape(BelowL and confirmOpenS, color=color.rgb(212, 3, 249), style=shape.arrowdown, size=size.large, textcolor=color.rgb(215, 4, 252), title="BEARISH", text="BEARISH", location=location.abovebar)
+
+alertcondition(AboveH and confirmOpenL, title="BULLISH", message="Price is Above the High Main Main Signal Line")
+alertcondition(BelowL and confirmOpenS, title="BEARISH", message="Price is Below the Low Main Signal Line")
+
+// Plot Signal and Make Alertcondition
+
+plotshape(long and confirmOpenL, color=color.rgb(10, 241, 10), style=shape.arrowup, size=size.large, textcolor=color.rgb(10, 241, 10), title="Buy Signal", text="LONG", location=location.belowbar)
+plotshape(short and confirmOpenS, color=color.rgb(231, 8, 8), style=shape.arrowdown, size=size.large, textcolor=color.rgb(231, 8, 8), title="Sell Signal", text="SHORT", location=location.abovebar)
+
+alertcondition(long and confirmOpenL, title="Buy Signal Alert", message="A buy signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
+alertcondition(short and confirmOpenS, title="Sell Signal Alert", message="A sell signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
