@@ -1,4 +1,3 @@
-#### 
 // This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 
 // © Seatrips
@@ -79,10 +78,24 @@ slow_line = ta.sma(close, slow_period)
 lowest = ta.lowest(lo, lengthInput)
 highest = ta.highest(hi, lengthInput)
 
+// BB
+
+lengthbb = input.int(34, minval=1)
+mult = input.float(2.0, minval=0.001, maxval=50)
+
+mid = ta.sma(src, lengthbb)
+dev = ta.stdev(src, lengthbb)
+dev2 = mult * dev
+
+upper1 = mid + dev
+lower1 = mid - dev
+upper2 = mid + dev2
+lower2 = mid - dev2
+
 // Plot or Not
 
-ema10plot = input (defval = false, title="Show EMA10 on chart")
-sma20plot = input (defval = false, title="Show sma20 on chart")
+ema10plot = input (defval = true, title="Show EMA10 on chart")
+sma20plot = input (defval = true, title="Show sma20 on chart")
 sma50plot = input (defval = false, title="Show sma50 on chart")
 sma200plot = input (defval = false, title="Show sma200 on chart")
 highestplot = input(defval = false, title="Plot Highest on the chart")
@@ -155,11 +168,35 @@ if (short)
 yeslong = closeabove and not long
 yesshort = closebelow and not short
 
+// Define Candle Colors
+
 color candlecolor = yeslong and not (close > highest) ? bull : yesshort and not (close < lowest) ? bear : middle ? neutral : long and not (close > highest) ? standard : short and not (close < lowest) ? neutral : close > highest and (close > slow_line) ? deepbull : close < lowest and (close < slow_line) ? deepbear : color.white
 
-// Set candle colors
+// Set Bar colors
 
 barcolor(candlecolor)
+
+// BackGround color
+
+xUp = close > highest
+xDn = close < lowest
+xNotUpandDn = not xUp and not xDn
+
+bgcolor(xUp ? color.new(color.lime, 97) : xDn ? color.new(#fb4040, 95) : xNotUpandDn ? color.new(color.gray, 96) : na)
+
+// BB
+
+pU1 = plot(upper1, color=color.new(#4caf4f, 96), style=plot.style_circles, title = "BB:)")
+pU2 = plot(upper2, color=color.new(#4caf4f, 0), title = "UpperBB:)")
+pL1 = plot(lower1, color=color.new(#ff5252, 96), style=plot.style_circles, title = "BB:)")
+pL2 = plot(lower2, color=color.new(#ff5252, 0), title = "LowerBB:)")
+
+colorMid = src >= mid ? color.rgb(76, 175, 79, 100) : color.rgb(255, 153, 0, 100)
+pB = plot(mid, linewidth=2, color=colorMid, title = "Mid:)")
+fill(pB, pU2, color=color.new(#4caf4f, 100))
+fill(pU1, pU2, color=color.new(color.green, 80))
+fill(pB, pL2, color=color.new(#ff5252, 100))
+fill(pL1, pL2, color=color.new(color.red, 80))
 
 // Sentiment signals
 
@@ -244,4 +281,3 @@ plotshape(short and confirmOpenS, color=color.rgb(244, 134, 143), style=shape.ar
 alertcondition(long and confirmOpenL, title="Buy Signal Alert", message="A buy signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
 alertcondition(short and confirmOpenS, title="Sell Signal Alert", message="A sell signal has been detected and to be more safe you better wait for next candle confirmation.Check slope of moving averages")
 
-####
